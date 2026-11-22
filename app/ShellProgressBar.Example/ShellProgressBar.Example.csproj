@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>shellprogressbar-example</AssemblyName>
     <RootNamespace>ShellProgressBar.Example</RootNamespace>
     <Version>$(CurrentVersion)</Version>
@@ -12,6 +12,6 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ShellProgressBar\ShellProgressBar.csproj" />
+    <ProjectReference Include="..\..\src\ShellProgressBar\ShellProgressBar.csproj" />
   </ItemGroup>
 </Project>
