@@ -12,6 +12,6 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ShellProgressBar\ShellProgressBar.csproj" />
+    <ProjectReference Include="..\..\src\ShellProgressBar\ShellProgressBar.csproj" />
   </ItemGroup>
 </Project>
