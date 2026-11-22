@@ -1,25 +1,27 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio Version 18
+VisualStudioVersion = 18.13.12412.241 insiders
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShellProgressBar", "ShellProgressBar\ShellProgressBar.csproj", "{4767E390-2159-470C-AE49-E75E2DDF80A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShellProgressBar", "src\ShellProgressBar\ShellProgressBar.csproj", "{4767E390-2159-470C-AE49-E75E2DDF80A4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShellProgressBar.Example", "ShellProgressBar.Example\ShellProgressBar.Example.csproj", "{25EEC6B1-4113-41F4-8181-674E4855F40A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShellProgressBar.Example", "app\ShellProgressBar.Example\ShellProgressBar.Example.csproj", "{25EEC6B1-4113-41F4-8181-674E4855F40A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{DEEB298E-2B68-4DDD-9BBA-8E4BFCB2AA30}"
-	ProjectSection(SolutionItems) = preProject
-		.build\MSBuild.Community.Tasks.dll = .build\MSBuild.Community.Tasks.dll
-		.build\MSBuild.Community.Tasks.targets = .build\MSBuild.Community.Tasks.targets
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{314A5D2B-11E8-4BF3-BB64-B4E15399591C}"
 	ProjectSection(SolutionItems) = preProject
-		..\build.bat = ..\build.bat
-		..\README.md = ..\README.md
+		build.bat = build.bat
+		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShellProgressBar.Tests", "..\test\ShellProgressBar.Tests\ShellProgressBar.Tests.csproj", "{7F6B9B22-0375-46C4-ADEB-30F5BF6DB7B2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShellProgressBar.Tests", "test\ShellProgressBar.Tests\ShellProgressBar.Tests.csproj", "{7F6B9B22-0375-46C4-ADEB-30F5BF6DB7B2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "app", "app", "{20C876D1-6176-4759-9575-D4F6F5AA3052}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{96C80C25-5223-4330-B242-B7A5CA7614ED}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{649B2B19-FA99-466D-9FE4-E72D5D533D9C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,5 +44,13 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4767E390-2159-470C-AE49-E75E2DDF80A4} = {96C80C25-5223-4330-B242-B7A5CA7614ED}
+		{25EEC6B1-4113-41F4-8181-674E4855F40A} = {20C876D1-6176-4759-9575-D4F6F5AA3052}
+		{7F6B9B22-0375-46C4-ADEB-30F5BF6DB7B2} = {649B2B19-FA99-466D-9FE4-E72D5D533D9C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {09DE05FD-EFB6-4C31-BF78-4FFE6140DDCA}
 	EndGlobalSection
 EndGlobal

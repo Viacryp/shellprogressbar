@@ -1,0 +1,158 @@
+name: build
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [develop]
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  packages: read          # needed to restore the Libs packages
+
+env:
+  VERSION_BASE: "3.10.0"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  GH_PACKAGES_USER: ${{ vars.GH_PACKAGES_USER }}
+  GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover solution
+        run: |
+          mapfile -t solutions < <(find . -maxdepth 1 -name '*.sln' -type f | sort)
+          if [ "${#solutions[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one solution in the repository root, found ${#solutions[@]}"
+            exit 1
+          fi
+          echo "SOLUTION=${solutions[0]}" >> "$GITHUB_ENV"
+
+      - name: Determine version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && { [ "$GITHUB_REF_NAME" = "main" ] || [ "$GITHUB_REF_NAME" = "master" ]; }; then
+            V="$VERSION_BASE.${{ github.run_number }}"
+          else
+            V="$VERSION_BASE.${{ github.run_number }}-develop"
+          fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props', '**/Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore "$SOLUTION"
+
+      - name: Build
+        run: >
+          dotnet build "$SOLUTION" -c Release --no-restore
+          -p:Version=$VERSION -p:ContinuousIntegrationBuild=true
+
+      - name: Test
+        run: dotnet test "$SOLUTION" -c Release --no-build --logger trx
+
+      - name: Publish applications
+        run: |
+          mapfile -t projects < <(find app -name '*.csproj' -type f | sort)
+          if [ "${#projects[@]}" -eq 0 ]; then
+            echo "::error::No application projects found under app/"
+            exit 1
+          fi
+
+          for project in "${projects[@]}"; do
+            package_name="$(basename "$project" .csproj)"
+            output_dir="output/$package_name"
+            dotnet publish "$project" -c Release -o "$output_dir" \
+              --no-restore --no-self-contained \
+              -p:Version="$VERSION" -p:PublishTrimmed=false
+            rm -rf "$output_dir/certificates"
+            rm -f "$output_dir/clientConfig.json" "$output_dir"/*.vcfg
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: applications.${{ env.VERSION }}
+          path: output
+          retention-days: 90
+
+      - name: Pack NuGet packages (main or master only)
+        if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+        run: |
+          shopt -s globstar
+          for p in src/**/*.csproj; do
+            dotnet pack "$p" -c Release --no-build -o ./nugets \
+              -p:Version=$VERSION \
+              -p:RepositoryUrl=${{ github.server_url }}/${{ github.repository }}
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+        with:
+          name: nuget-packages
+          path: ./nugets/*.nupkg
+
+  publish:
+    needs: build
+    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./nugets
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: applications.${{ needs.build.outputs.version }}
+          path: ./output
+
+      - name: Push packages to GitHub Packages
+        run: >
+          dotnet nuget push "./nugets/*.nupkg"
+          --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+          --api-key ${{ secrets.GITHUB_TOKEN }}
+          --skip-duplicate
+
+      - name: Zip applications
+        run: |
+          for app_dir in output/*/; do
+            package_name="$(basename "$app_dir")"
+            (cd "$app_dir" && zip -r "../../${package_name}.${VERSION}.zip" .)
+          done
+
+      - name: Create release
+        run: |
+          gh release create "v$VERSION" \
+            --repo ${{ github.repository }} \
+            --target ${{ github.sha }} \
+            --title "v$VERSION" \
+            --generate-notes \
+            ./*.zip
