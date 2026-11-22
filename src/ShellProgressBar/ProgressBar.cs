@@ -14,6 +14,7 @@ namespace ShellProgressBar
 
 		private readonly ConsoleColor _originalColor;
 		private readonly Func<ConsoleOutLine, int> _writeMessageToConsole;
+		private readonly bool _useDefaultConsoleWriter;
 		private readonly bool _startedRedirected;
 		private int _originalCursorTop;
 		private int _isDisposed;
@@ -33,6 +34,7 @@ namespace ShellProgressBar
 			: base(maxTicks, message, options)
 		{
 
+			_useDefaultConsoleWriter = this.Options.WriteQueuedMessage == null;
 			_writeMessageToConsole = this.Options.WriteQueuedMessage ?? DefaultConsoleWrite;
 			_startedRedirected = Console.IsOutputRedirected;
 
@@ -379,6 +381,23 @@ namespace ShellProgressBar
 
 		private void WriteConsoleLine(ConsoleOutLine m)
 		{
+			if (_startedRedirected)
+			{
+				if (_useDefaultConsoleWriter)
+				{
+					if (m.Error)
+						Console.Error.WriteLine(m.Line);
+					else
+						Console.WriteLine(m.Line);
+				}
+				else
+				{
+					_writeMessageToConsole(m);
+				}
+
+				return;
+			}
+
 			var foreground = Console.ForegroundColor;
 			var background = Console.BackgroundColor;
 			ClearCurrentLine();
